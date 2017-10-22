@@ -26,6 +26,7 @@ This may be works fine, if don't, try to change the fingerprint baud rate with b
 
 
 '''
+from socketIO_client import SocketIO
 import FPS, sys
 DEVICE_GPIO = '/dev/ttyAMA0'
 # DEVICE_LINUX = '/dev/cu.usbserial-A601EQ14'
@@ -34,20 +35,44 @@ DEVICE_GPIO = '/dev/ttyAMA0'
 FPS.BAUD = 9600
 FPS.DEVICE_NAME = DEVICE_GPIO
 
+def on_connect():
+    print('connect')
+
+def on_disconnect():
+    print('disconnect')
+
+def on_fps_com_response(*args):
+    print('on_fps_com_response', args)
+    # print(type(args))
+    # print(args['msg'])
+    # x = args[0]
+
+    # if x['hello'] == "Hey there!":
+    #     print ('yo')
+
 def waitUntilPress(fps):
     while fps.IsPressFinger() == False:
-        FPS.delay(FPS.INTERVAL+0.003)
+        FPS.delay(FPS.INTERVAL+0.03)
 
 def waitUntilRelease(fps):
     while fps.IsPressFinger() == True:
-        FPS.delay(FPS.INTERVAL+0.003)
+        FPS.delay(FPS.INTERVAL+0.03)
 
 def identifyprotocol(fps):
     waitUntilPress(fps)
     if fps.CaptureFinger(True):
         return fps.Identify1_N()
     else:
-        return fail
+        return 'fail'
+
+def printEnroll():
+    enrollid=0
+    okid=True
+    #search for a free enrollid, you have max 200
+    while enrollid < 200:
+        okid = fps.CheckEnrolled(enrollid)
+        print okid
+        enrollid+=1
 
 def LegacyEnroll(fps):
     '''
@@ -105,19 +130,35 @@ if __name__ == '__main__':
     fps =  FPS.FPS_GT511C3(device_name=DEVICE_GPIO,baud=9600,timeout=2,is_com=False)
     fps.UseSerialDebug = False
     # fps.UseSerialDebug = True
+
     fps.SetLED(True) # Turns ON the CMOS LED
     FPS.delay(1) # wait 1 second for initialize finish
 
-    # waitUntilPress(fps)
-    # waitUntilRelease(fps)
+    socketIO = SocketIO('http://192.168.1.37', 8080, verify=False)
+    socketIO.on('connect', on_connect)
+    socketIO.on('fps_com', on_fps_com_response)
+    socketIO.emit('fps_com', 'FPS >>> standby')
+    socketIO.wait(0.5)
+    while True:
+        waitUntilPress(fps)
+        idenid = identifyprotocol(fps)
+        print 'lift the finger'
+        socketIO.on('fps_com', on_fps_com_response)
+        socketIO.emit('fps_com', idenid)
+        socketIO.wait(0.5)
+        fps.SetLED(False) # Turns OFF the CMOS LED
+        FPS.delay(0.1) # wait 1 second for initialize finish
+        fps.SetLED(True) # Turns ON the CMOS LED
+        waitUntilRelease(fps)
+
 
     # LegacyEnroll(fps)
     # print 'Identify'
     # FPS.delay(1)
-    print identifyprotocol(fps)
+    # print identifyprotocol(fps)
+    # printEnroll()
 
     # fps.DeleteAll()
-
     fps.SetLED(False) # Turns CLOSE the CMOS LED
 
     # fps.Close() # Closes serial connection
