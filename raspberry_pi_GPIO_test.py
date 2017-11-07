@@ -34,7 +34,7 @@ DEVICE_GPIO = '/dev/ttyAMA0'
 # DEVICE_WINDOWS = 'COM3'
 FPS.BAUD = 9600
 FPS.DEVICE_NAME = DEVICE_GPIO
-socket_cmd = 'strig'
+socket_cmd = 'string'
 
 def on_connect():
     print('connect')
@@ -72,7 +72,7 @@ def identifyprotocol(fps):
     if fps.CaptureFinger(True):
         return fps.Identify1_N()
     else:
-        return 'fail'
+        return 'Fail to identify'
 
 def printEnroll():
     enrollid=0
@@ -139,7 +139,7 @@ def LegacyEnroll(fps):
                     else:
                         # print 'Enrolling Failed with error code: %s' % str(iret)
                         if(iret == 3):
-                            msg = 'duplicate finger'
+                            msg = 'Failed : Found duplicate finger'
                         else:
                             msg = 'Enrolling Failed with error code: %s' % str(iret)
                         socketIO.emit('fps_com', msg)
@@ -181,6 +181,7 @@ if __name__ == '__main__':
                 # print('checkadmin')
                 LegacyEnroll(fps)
                 FPS.delay(1) # wait 1 second for initialize finish
+                socket_cmd = 'none'
 
 
         idenid = identifyprotocol(fps)
