@@ -543,7 +543,8 @@ class FPS_GT511C3(SerialCommander):
         rp = self.GetResponse()
         retval = rp.IntFromParameter()
         retval = 3 if retval < MAX_FINGER else 0
-        print "retval", hex(retval)
+        print "retval", retval
+        #print "retval", hex(retval)
         if not rp.ACK:
             if rp.Error == rp.errors['NACK_ENROLL_FAILED']:
                 retval = 1

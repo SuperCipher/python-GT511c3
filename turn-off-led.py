@@ -78,52 +78,80 @@ def LegacyEnroll(fps):
     '''
     Enroll test
     '''
-
+    fps.SetLED(False) # Turns OFF the CMOS LED
     enrollid=0
     okid=True
+    msg='string'
     #search for a free enrollid, you have max 200
     while okid == True and enrollid < 200:
         okid = fps.CheckEnrolled(enrollid)
         print okid
         if okid == True:
             enrollid+=1
+    fps.SetLED(True) # Turns ON the CMOS LED
     if enrollid <200:
         #press finger to Enroll enrollid
         print 'Press finger to Enroll %s' % str(enrollid)
+        # msg = 'Press finger to Enroll ID: %s' % str(enrollid)
+        # socketIO.emit('fps_com', msg)
         fps.EnrollStart(enrollid)
         waitUntilPress(fps)
         iret = 0
         if fps.CaptureFinger(True):
             #remove finger
             print 'remove finger'
+            # msg = 'remove finger'
+            # socketIO.emit('fps_com', msg)
             fps.Enroll1()
             waitUntilRelease(fps)
             #Press same finger again
             print 'Press same finger again'
+            # msg = 'Press finger for the second time'
+            # socketIO.emit('fps_com', msg)
             waitUntilPress(fps)
             if fps.CaptureFinger(True):
                 #remove finger
                 print 'remove finger'
+                # msg = 'remove finger'
+                # socketIO.emit('fps_com', msg)
                 fps.Enroll2()
                 waitUntilRelease(fps)
                 #Press same finger again
                 print 'press same finger yet again'
+                # msg = 'final press'
+                # socketIO.emit('fps_com', msg)
                 waitUntilPress(fps)
                 if fps.CaptureFinger(True):
                     #remove finger
                     iret = fps.Enroll3()
                     if iret == 0:
                         print 'Enrolling Successfull'
+                        # msg = {msg:'Enrolling Successfull',data:enrollid}
+                        # socketIO.emit('fps_com', msg)
                     else:
                         print 'Enrolling Failed with error code: %s' % str(iret)
+                        # if(iret == 3):
+                            # msg = 'Failed : Found duplicate finger'
+                            # socketIO.emit('fps_com', msg)
+                        # else:
+                            # msg = 'Failed with error code: %s' % str(iret)
+                            # socketIO.emit('fps_com', msg)
                 else:
                     print 'Failed to capture third finger'
+                    # msg = 'Failed to capture third finger'
+                    # socketIO.emit('fps_com', msg)
             else:
                 print 'Failed to capture second finger'
+                # msg = 'Failed to capture second finger'
+                # socketIO.emit('fps_com', msg)
         else:
             print 'Failed to capture first finger'
+            # msg = 'Failed to capture first finger'
+            # socketIO.emit('fps_com', msg)
     else:
         print 'Failed: enroll storage is full'
+        # msg = 'Failed: enroll storage is full'
+        # socketIO.emit('fps_com', msg)
 
 
 if __name__ == '__main__':
@@ -131,8 +159,8 @@ if __name__ == '__main__':
     fps.UseSerialDebug = False
     # fps.UseSerialDebug = True
 
-    fps.SetLED(True) # Turns ON the CMOS LED
-    FPS.delay(1) # wait 1 second for initialize finish
+    fps.SetLED(False) # Turns ON the CMOS LED
+    FPS.delay(5) # wait 1 second for initialize finish
 
     # socketIO = SocketIO('http://192.168.1.37', 8080, verify=False)
     # socketIO.on('connect', on_connect)
@@ -159,7 +187,7 @@ if __name__ == '__main__':
     # printEnroll()
 
     # fps.DeleteAll()
-    fps.SetLED(False) # Turns CLOSE the CMOS LED
+    #fps.SetLED(False) # Turns CLOSE the CMOS LED
 
     # fps.Close() # Closes serial connection
     pass

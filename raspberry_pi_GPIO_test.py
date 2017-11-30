@@ -53,10 +53,12 @@ def on_fps_com_response(*args):
     # if x['hello'] == "Hey there!":
     #     print ('yo')
 
-socketIO = SocketIO('http://192.168.1.37', 8080, verify=False)
+# socketIO = SocketIO('http://192.168.1.38', 8080, verify=False)
+# socketIO = SocketIO('http://192.168.2.1', 8080, verify=False)
+socketIO = SocketIO('localhost', 8080, verify=False)
 socketIO.on('connect', on_connect)
 socketIO.on('fps_com', on_fps_com_response)
-socketIO.emit('fps_com', 'FPS >>> standby')
+socketIO.emit('fps_com', {'msg':'FPS >>> standby'})
 socketIO.wait(0.5)
 
 def waitUntilPress(fps):
@@ -87,7 +89,7 @@ def LegacyEnroll(fps):
     '''
     Enroll test
     '''
-
+    fps.SetLED(False) # Turns OFF the CMOS LED
     enrollid=0
     okid=True
     msg='string'
@@ -97,10 +99,12 @@ def LegacyEnroll(fps):
         print okid
         if okid == True:
             enrollid+=1
+    fps.SetLED(True) # Turns ON the CMOS LED
     if enrollid <200:
         #press finger to Enroll enrollid
         # print 'Press finger to Enroll %s' % str(enrollid)'
-        msg = 'Press finger to Enroll ID: %s' % str(enrollid)
+        msgReal = 'Press finger to Enroll ID: %s' % str(enrollid)
+        msg = {'msg':msgReal}
         socketIO.emit('fps_com', msg)
         fps.EnrollStart(enrollid)
         waitUntilPress(fps)
@@ -108,25 +112,25 @@ def LegacyEnroll(fps):
         if fps.CaptureFinger(True):
             #remove finger
             # print 'remove finger'
-            msg = 'remove finger'
+            msg = {'msg':'remove finger'}
             socketIO.emit('fps_com', msg)
             fps.Enroll1()
             waitUntilRelease(fps)
             #Press same finger again
             # print 'Press same finger again'
-            msg = 'Press finger for the second time'
+            msg = {'msg':'Press finger for the second time'}
             socketIO.emit('fps_com', msg)
             waitUntilPress(fps)
             if fps.CaptureFinger(True):
                 #remove finger
                 # print 'remove finger'
-                msg = 'remove finger'
+                msg = {'msg':'remove finger'}
                 socketIO.emit('fps_com', msg)
                 fps.Enroll2()
                 waitUntilRelease(fps)
                 #Press same finger again
                 # print 'press same finger yet again'
-                msg = 'final press'
+                msg = {'msg':'final press'}
                 socketIO.emit('fps_com', msg)
                 waitUntilPress(fps)
                 if fps.CaptureFinger(True):
@@ -134,30 +138,32 @@ def LegacyEnroll(fps):
                     iret = fps.Enroll3()
                     if iret == 0:
                         # print 'Enrolling Successfull'
-                        msg = 'Enrolling Successfull'
+                        msg = {'msg':'Enrolled Successfull','data':enrollid}
                         socketIO.emit('fps_com', msg)
                     else:
                         # print 'Enrolling Failed with error code: %s' % str(iret)
                         if(iret == 3):
-                            msg = 'Failed : Found duplicate finger'
+                            msg = {'msg':'Failed : Found duplicate finger'}
+                            socketIO.emit('fps_com', msg)
                         else:
-                            msg = 'Enrolling Failed with error code: %s' % str(iret)
-                        socketIO.emit('fps_com', msg)
+                            msgReal = 'Failed with error code: %s' % str(iret)
+                            msg = {'msg':msgReal}
+                            socketIO.emit('fps_com', msg)
                 else:
                     # print 'Failed to capture third finger'
-                    msg = 'Failed to capture third finger'
+                    msg = {'msg':'Failed to capture third finger'}
                     socketIO.emit('fps_com', msg)
             else:
                 # print 'Failed to capture second finger'
-                msg = 'Failed to capture second finger'
+                msg = {'msg':'Failed to capture second finger'}
                 socketIO.emit('fps_com', msg)
         else:
             # print 'Failed to capture first finger'
-            msg = 'Failed to capture first finger'
+            msg = {'msg':'Failed to capture first finger'}
             socketIO.emit('fps_com', msg)
     else:
         # print 'Failed: enroll storage is full'
-        msg = 'Failed: enroll storage is full'
+        msg = {'msg':'Failed: enroll storage is full'}
         socketIO.emit('fps_com', msg)
 
 
@@ -167,9 +173,9 @@ if __name__ == '__main__':
     # fps.UseSerialDebug = True
 
 
-    fps.SetLED(True) # Turns ON the CMOS LED
+    #fps.SetLED(True) # Turns ON the CMOS LED
     FPS.delay(1) # wait 1 second for initialize finish
-
+    fps.SetLED(True) # Turns ON the CMOS LED
 
     while True:
         while fps.IsPressFinger() == False:
@@ -177,21 +183,27 @@ if __name__ == '__main__':
             socketIO.on('fps_com', on_fps_com_response)
             socketIO.wait(0.05)
             # print("i'm here",socket_cmd)
-            if socket_cmd == 'check admin':
-                # print('checkadmin')
+            if socket_cmd == 'add':
+                # print('add')
                 LegacyEnroll(fps)
-                FPS.delay(1) # wait 1 second for initialize finish
+                FPS.delay(2) # wait 1 second
                 socket_cmd = 'none'
+            elif socket_cmd == 'delete':
+                print('delete')
+
 
 
         idenid = identifyprotocol(fps)
         print 'lift the finger'
         socketIO.on('fps_com', on_fps_com_response)
-        socketIO.emit('fps_com', idenid)
-        socketIO.wait(0.5)
-        fps.SetLED(False) # Turns OFF the CMOS LED
-        FPS.delay(0.1) # wait 1 second for initialize finish
-        fps.SetLED(True) # Turns ON the CMOS LED
+        if  0 <= idenid < 200:
+            socketIO.emit('fps_com', {'msg':'verified Successfull','data':idenid})
+        else:
+            socketIO.emit('fps_com', {'msg':'verified Failed','data':idenid})
+        #socketIO.wait(0.5)
+        #fps.SetLED(False) # Turns OFF the CMOS LED
+        #FPS.delay(0.1) # wait 1 second for initialize finish
+        #fps.SetLED(True) # Turns ON the CMOS LED
         waitUntilRelease(fps)
 
 
