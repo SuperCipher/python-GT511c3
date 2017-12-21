@@ -35,6 +35,7 @@ DEVICE_GPIO = '/dev/ttyAMA0'
 FPS.BAUD = 9600
 FPS.DEVICE_NAME = DEVICE_GPIO
 socket_cmd = 'string'
+socket_data = 1
 
 def on_connect():
     print('connect')
@@ -43,17 +44,18 @@ def on_disconnect():
     print('disconnect')
 
 def on_fps_com_response(*args):
-    # print('on_fps_com_response', args)
     # print(type(args))
-    # print(args['msg'])
     x = args[0]
     print(x['msg'])
+    # print x
     global socket_cmd
     socket_cmd = x['msg']
-    # if x['hello'] == "Hey there!":
-    #     print ('yo')
+    global socket_data
+    socket_data = x['data']
+    # print socket_data
 
-# socketIO = SocketIO('http://192.168.1.38', 8080, verify=False)
+
+# socketIO = SocketIO('http://192.168.1.40', 8080, verify=False)
 # socketIO = SocketIO('http://192.168.2.1', 8080, verify=False)
 socketIO = SocketIO('localhost', 8080, verify=False)
 socketIO.on('connect', on_connect)
@@ -190,6 +192,9 @@ if __name__ == '__main__':
                 socket_cmd = 'none'
             elif socket_cmd == 'delete':
                 print('delete')
+                DeleteID(socket_data)
+                socketIO.emit('fps_com', {'msg':'Delete Successfull','data':socket_data})
+                socket_cmd = 'none'
 
 
 
