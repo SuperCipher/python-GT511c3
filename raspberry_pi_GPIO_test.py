@@ -24,9 +24,12 @@ Connect the Ground pin of fingerprint GT511C3 to ground pin in GPIO
 
 This may be works fine, if don't, try to change the fingerprint baud rate with baud_to_115200.py sample code
 
+modified by Napat Charuphant <napat_pat3@hotmail.com> on october 2017
 
 '''
 from socketIO_client import SocketIO
+import RPi.GPIO as GPIO #for external led
+import time #for external led
 import FPS, sys
 DEVICE_GPIO = '/dev/ttyAMA0'
 # DEVICE_LINUX = '/dev/cu.usbserial-A601EQ14'
@@ -172,6 +175,12 @@ def LegacyEnroll(fps):
 if __name__ == '__main__':
     fps =  FPS.FPS_GT511C3(device_name=DEVICE_GPIO,baud=9600,timeout=2,is_com=False)
     fps.UseSerialDebug = False
+    GPIO.setmode(GPIO.BCM)      # programming the GPIO by BOARD pin numbers, GPIO21 is called as PIN21
+    # Set the LED GPIO number
+    LED = 21
+
+    # Set the LED GPIO pin as an output
+    GPIO.setup(LED, GPIO.OUT)             # initialize digital pin21 as an output.
     # fps.UseSerialDebug = True
 
 
@@ -192,33 +201,22 @@ if __name__ == '__main__':
                 socket_cmd = 'none'
             elif socket_cmd == 'delete':
                 print('delete')
-                DeleteID(socket_data)
+                fps.DeleteID(int(socket_data))
                 socketIO.emit('fps_com', {'msg':'Delete Successfull','data':socket_data})
                 socket_cmd = 'none'
-
-
 
         idenid = identifyprotocol(fps)
         print 'lift the finger'
         socketIO.on('fps_com', on_fps_com_response)
         if  0 <= idenid < 200:
             socketIO.emit('fps_com', {'msg':'verified Successfull','data':idenid})
+            GPIO.output(LED,True)                      # turn the LED on (making the voltage level HIGH)
+            time.sleep(3.5)                         # sleep for a second
+            GPIO.output(LED,False)                        # turn the LED off (making all the output pins LOW)
         else:
             socketIO.emit('fps_com', {'msg':'verified Failed','data':idenid})
-        #socketIO.wait(0.5)
-        #fps.SetLED(False) # Turns OFF the CMOS LED
-        #FPS.delay(0.1) # wait 1 second for initialize finish
-        #fps.SetLED(True) # Turns ON the CMOS LED
         waitUntilRelease(fps)
 
-
-    # LegacyEnroll(fps)
-    # print 'Identify'
-    # FPS.delay(1)
-    # print identifyprotocol(fps)
-    # printEnroll()
-
-    # fps.DeleteAll()
     fps.SetLED(False) # Turns CLOSE the CMOS LED
 
     # fps.Close() # Closes serial connection

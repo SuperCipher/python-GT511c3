@@ -187,7 +187,7 @@ if __name__ == '__main__':
     # printEnroll()
 
 
-    # printEnroll()
+    printEnroll()
     deleteID = int(raw_input("ID : "))
     fps.DeleteID(deleteID)
 
